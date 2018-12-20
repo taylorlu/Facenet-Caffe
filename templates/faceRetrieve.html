@@ -292,7 +292,7 @@ function preview(jsonStr){
 					$imageBox.style.height = item.height + 'px';
 
 					var span = document.createElement("span");
-					span.innerHTML = "欧式距离:" + item.prob.toString();
+					span.innerHTML = "相似度: " + Math.round((2-item.prob)/2*10000)/100.00+"%";
 					span.setAttribute('class', 'class_cover');
 
 					$imageBox.appendChild(item);
