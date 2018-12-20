@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>人脸图片注册</title>
+	<script src="static/js/prefixfree.min.js"></script>
+	<script src="static/js/jquery-2.1.1.min.js" type="text/javascript"></script>
+	<script type="text/javascript" src="static/js/jquery-tab.js"></script>
+	<script src="static/js/bootstrap.min.js" type="text/javascript"></script>
+	<script src="static/js/jquery.filer.min.js" type="text/javascript"></script>
+	<script src="static/js/jquery.filer.js" type="text/javascript"></script>
+	<script src="static/js/prettify.js" type="text/javascript"></script>
+	<script src="static/js/scripts.js" type="text/javascript"></script>
+	<script src="static/js/imagesLayout.js" type="text/javascript"></script>
+
+	<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="static/css/jquery.filer.css">
+	<link rel="stylesheet" type="text/css" href="static/css/custom.css">
+
+<style type="text/css">
+	.clearfix:after, .container:after, .tab-nav:after {
+	  content: ".";
+	  display: block;
+	  height: 0;
+	  clear: both;
+	  visibility: hidden;
+	}
+
+	.container {
+	  position: relative;
+	  background: white;
+	  padding: 3em;
+	}
+
+	/* ===========
+	   Tab Styling */
+	.tab-group {
+	  position: relative;
+	  border: 1px solid #eee;
+	  margin-top: 2.5em;
+	  border-radius: 0 0 10px 10px;
+	}
+	.tab-group section {
+	  opacity: 0;
+	  height: 0;
+	  padding: 0 1em;
+	  overflow: hidden;
+	  transition: opacity 0.4s ease, height 0.4s ease;
+	}
+	.tab-group section.active {
+	  opacity: 1;
+	  height: auto;
+	  overflow: visible;
+	}
+
+	.tab-nav {
+	  list-style: none;
+	  margin: -2.5em -1px 0 0;
+	  padding: 0;
+	  height: 2.5em;
+	  overflow: hidden;
+	}
+	.tab-nav li {
+	  display: inline;
+	}
+	.tab-nav li a {
+	  top: 1px;
+	  position: relative;
+	  display: block;
+	  float: left;
+	  border-radius: 10px 10px 0 0;
+	  background: #eee;
+	  line-height: 2em;
+	  padding: 0 1em;
+	  text-decoration: none;
+	  color: grey;
+	  margin-top: .5em;
+	  margin-right: 1px;
+	  transition: background .2s ease, line-height .2s ease, margin .2s ease;
+	}
+	.tab-nav li.active a {
+	  background: #6EB590;
+	  color: white;
+	  line-height: 2.5em;
+	  margin-top: 0;
+	}
+	.messages{padding:15px 0;}
+	.messlist {height:30px;margin-bottom:10px;}
+	.messlist label{float:left;width:100px; height:30px; font-size:14px; line-height:30px; text-align:right;padding-right:10px;}
+	.messlist input{float:left;width:500px;height:28px;padding-left:5px;border:#ccc 1px solid;}
+	.messlist .del{display:inline;margin-left:10px;width:100px;height:28px;line-height:28px;}
+
+    .containe{
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
+    }
+    .item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #fff;
+        border-radius: .2rem;
+        font-size: .8em;
+        min-height: 7rem;
+        padding: .75rem;
+        color: #f0f0f3;
+        background-color: #dddddd;
+    }
+    .bodyContent{
+        display: grid;
+        grid-auto-flow: row;
+        align-items: center;
+        justify-content: center;
+        text-align:center;
+    }
+    #container2 {
+        position: relative;
+        margin: 50px;
+        border: 1px dashed black;
+        display: inline-block;
+    }
+    #imageDisplay:before, #imageDisplay:after {
+	  content: '';
+	  display: table;
+	  clear: both;
+	}
+	img {
+	  display: block;
+	  width: 100%;
+	  height: 100%;
+	}
+	.image-box {
+	  float: left;
+	  padding: 1px;
+	  overflow: hidden;
+	}
+    #mapBorder {
+        position: absolute;
+        border: 2px solid red;
+        display: none;
+    }
+    #svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    .normalSvgBorder {
+        fill: rgba(220,220,220,0.3);
+        stroke: black;
+        stroke-width: 2;
+        stroke-dasharray: 5;
+    }
+    .focusSvgBorder {
+        fill: transparent;
+        stroke: red;
+        stroke-width: 5;
+    }
+    .loader {
+	  position: absolute;
+	  top: 50%;
+	  left: 40%;
+	  margin-left: 10%;
+	  transform: translate3d(-50%, -50%, 0);
+	}
+	.dot {
+	  width: 24px;
+	  height: 24px;
+	  background: #3ac;
+	  border-radius: 100%;
+	  display: inline-block;
+	  animation: slide 1s infinite;
+	}
+	.dot:nth-child(1) {
+	  animation-delay: 0.1s;
+	  background: #32aacc;
+	}
+	.dot:nth-child(2) {
+	  animation-delay: 0.2s;
+	  background: #64aacc;
+	}
+	.dot:nth-child(3) {
+	  animation-delay: 0.3s;
+	  background: #96aacc;
+	}
+	.dot:nth-child(4) {
+	  animation-delay: 0.4s;
+	  background: #c8aacc;
+	}
+	.dot:nth-child(5) {
+	  animation-delay: 0.5s;
+	  background: #faaacc;
+	}
+	@-moz-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@-webkit-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@-o-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+</style>
+
+<script type="text/javascript">
+
+var MaxInputs = 10;
+var InputsWrapper;
+var x;
+
+$(document).ready(function(){
+
+  MaxInputs    = 10;
+  InputsWrapper  = $("#InputsWrapper");
+  x = InputsWrapper.length;
+
+  $('.tab-group').tabify();
+  	$('#fileInput').filer({
+		limit: 100,
+	    maxSize: 100,
+	    extensions: ['jpg', 'jpeg', 'png'],
+	    changeInput: true,
+	    showThumbs: true,
+	    onRemove: function(itemEl, file, id, listEl, boxEl, newInputEl, inputEl){
+	        curFiles.remove(file);
+	    },
+	    onSelect: function(file){
+	    	curFiles.push(file);
+	    }
+    });
+    document.getElementById("loader").style.display="none";
+});
+
+var curFiles = [];
+var images = [];
+Array.prototype.indexOf = function (val){
+    for (var i = 0; i < this.length; i++){
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val){
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
+
+function isValidURL(string) {
+  var res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+  if (res == null)
+    return false;
+  else
+    return true;
+}
+
+function loadXMLDoc(){
+
+	if(curFiles.length==0){alert("请选择图片"); return;}
+
+	var xmlhttp;
+	if (window.XMLHttpRequest){
+		xmlhttp=new XMLHttpRequest();
+	}
+	else{
+		xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+
+    var data = new FormData();
+    var names = ""
+    for(var i=0; i<curFiles.length; i++){
+    	names += encodeURIComponent(curFiles[i].name);
+    	names += "*"
+		data.append(encodeURIComponent(curFiles[i].name), curFiles[i]);
+    }
+    data.append("names", names);
+
+    xmlhttp.open("POST", "{{ faceRegister }}", true);
+    xmlhttp.responseType = "";
+    
+	xmlhttp.onreadystatechange=function(){
+		if (xmlhttp.readyState==4 && xmlhttp.status==200){
+			document.getElementById("loader").style.display="none";
+			previewFile(xmlhttp.responseText);
+		}
+	}
+	var node = document.getElementById('myDiv');
+		while (node.hasChildNodes()) {
+	    node.removeChild(node.lastChild);
+	}
+	$('#fileInput').trigger("filer.reset");
+    xmlhttp.send(data);
+    document.getElementById("loader").style.display="";
+}
+
+function createSvgElem(elemTag) {
+    return document.createElementNS("http://www.w3.org/2000/svg", elemTag);
+}
+
+function showSvgBorder() {
+    event.target.setAttribute("class", "focusSvgBorder");
+}
+
+function hideSvgBorder() {
+    event.target.setAttribute("class", "normalSvgBorder");
+}
+
+function displayFace(divName, obj, isLocalFile){
+
+	const $box = document.getElementById(divName);
+	// 创建一个布局实例
+	const layout = new ImagesLayout(images, $box.clientWidth, 3);
+
+	// 通过 layout 的 completedImages 获取所有图片的布局信息
+	layout.completedImages.forEach(item => {
+		let $imageBox = document.createElement('div');
+		$imageBox.setAttribute('class', 'image-box');
+		$imageBox.style.width = item.width + 'px';
+		$imageBox.style.height = item.height + 'px';
+
+		let canvas = document.createElement("canvas");
+		canvas.width = item.width;
+		canvas.height = item.height;
+		let context = canvas.getContext("2d");
+
+		for(var i=0; i<obj.faces.length; i++){
+			var judge = false;
+			if(isLocalFile){
+				if(decodeURIComponent(obj.faces[i].name)==item.fileName){
+					judge = true;
+				}
+			}
+			else{
+				if(obj.faces[i].name==item.fileName){
+					judge = true;
+				}
+			}
+			if(judge){
+
+				context.drawImage(item, 0, 0, canvas.width, canvas.height);
+				context.strokeStyle = "red";
+				context.scale(item.width/item.originWidth, item.width/item.originWidth);
+				context.lineWidth = item.originWidth/item.width*3;
+
+				for(var bi=0; bi<obj.faces[i].BoxsPoints.length; bi++){
+
+					context.strokeRect(obj.faces[i].BoxsPoints[bi].box[0], obj.faces[i].BoxsPoints[bi].box[1], obj.faces[i].BoxsPoints[bi].box[2]-obj.faces[i].BoxsPoints[bi].box[0], obj.faces[i].BoxsPoints[bi].box[3]-obj.faces[i].BoxsPoints[bi].box[1]);
+
+					context.fillStyle="#00FF00";
+					context.beginPath();
+					context.arc(obj.faces[i].BoxsPoints[bi].pt[0],obj.faces[i].BoxsPoints[bi].pt[5],2,0,Math.PI*2,true);
+					context.closePath();
+					context.fill();
+					context.beginPath();
+					context.arc(obj.faces[i].BoxsPoints[bi].pt[1],obj.faces[i].BoxsPoints[bi].pt[6],2,0,Math.PI*2,true);
+					context.closePath();
+					context.fill();
+					context.beginPath();
+					context.arc(obj.faces[i].BoxsPoints[bi].pt[2],obj.faces[i].BoxsPoints[bi].pt[7],2,0,Math.PI*2,true);
+					context.closePath();
+					context.fill();
+					context.beginPath();
+					context.arc(obj.faces[i].BoxsPoints[bi].pt[3],obj.faces[i].BoxsPoints[bi].pt[8],2,0,Math.PI*2,true);
+					context.closePath();
+					context.fill();
+					context.beginPath();
+					context.arc(obj.faces[i].BoxsPoints[bi].pt[4],obj.faces[i].BoxsPoints[bi].pt[9],2,0,Math.PI*2,true);
+					context.closePath();
+					context.fill();
+					
+				}
+				break;
+			}
+		}
+
+		$imageBox.appendChild(canvas);
+		$box.appendChild($imageBox);
+		curFiles=[];
+		images = [];
+	});
+}
+
+function previewFile(jsonStr){
+
+	var obj;
+	try {
+		obj = JSON.parse(jsonStr);
+	}
+	catch(e) {
+		alert(jsonStr);
+	}
+
+	for(var k=0; k< curFiles.length; k++){(function(){
+
+		var reader  = new FileReader();
+		reader.onload = (function (e) {
+			var img = new Image();
+			img.fileName = e.target.fileName;
+
+			img.onload=function(){
+				images.push(img);
+
+				if(images.length==curFiles.length) {
+					displayFace("myDiv", obj, true);
+				}
+			};
+			img.src = e.target.result;
+		});
+		reader.fileName = curFiles[k].name;
+		reader.readAsDataURL(curFiles[k]);
+
+	})(k)}
+}
+
+function previewURL(jsonStr){
+
+	var obj;
+	try {
+		obj = JSON.parse(jsonStr);
+	}
+	catch(e) {
+		alert(jsonStr);
+	}
+
+	for(var k=0; k< curFiles.length; k++){(function(){
+
+		var img = new Image();
+		img.fileName = curFiles[k];
+
+		img.onload=function(){
+			images.push(img);
+
+			if(images.length==curFiles.length) {
+				displayFace("myDiv2", obj, false);
+			}
+		};
+		img.src = curFiles[k];
+	})(k)}
+}
+
+function removeItem(self){
+    if( x > 1 ) {
+      self.parentNode.parentNode.removeChild(self.parentNode);//remove text box
+        x--;
+    }
+}
+
+function addItem(){
+	if(x < MaxInputs){
+		$(InputsWrapper).append('<div class="messlist"><label>url:</label><input type="text" placeholder="请输入图片的网络地址" name="mytext"/><input type="button" class="del" onclick="removeItem(this)" value="删除"/></div>');
+		x++;
+	}
+}
+
+function isnull(val) {
+    var str = val.replace(/(^\s*)|(\s*$)/g, '');
+    if (str == '' || str == undefined || str == null) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+function submit(){
+
+	var inputs = document.getElementsByName("mytext");
+	urlArr = [];
+	for(var i=0; i<inputs.length;i++){
+		if(isnull(inputs[i].value)){
+			continue;
+		}
+		urlArr.push(inputs[i].value);
+		curFiles.push(inputs[i].value);
+		if(!isValidURL(inputs[i].value)){
+			curFiles = [];
+			alert("请检查,有错误的URL地址");
+			return;
+		}
+	}
+	if(urlArr.length==0) return;
+
+	formDict = {};
+	formDict["urls"] = urlArr;
+
+	var xmlhttp;
+	if (window.XMLHttpRequest){
+		xmlhttp=new XMLHttpRequest();
+	}
+	else{
+		xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+
+    xmlhttp.open("POST", "{{ faceRegisterBatch }}", true);
+    xmlhttp.setRequestHeader('Content-Type', 'application/json');
+    xmlhttp.responseType = "";
+
+	xmlhttp.onreadystatechange=function(){
+		if (xmlhttp.readyState==4 && xmlhttp.status==200){
+			document.getElementById("loader").style.display="none";
+			previewURL(xmlhttp.responseText);
+		}
+	}
+    xmlhttp.send(JSON.stringify(formDict));
+
+    document.getElementById("loader").style.display="";
+
+	var node = document.getElementById('InputsWrapper');
+	while (node.hasChildNodes()) {
+		node.removeChild(node.lastChild);
+	}
+	$(InputsWrapper).append('<div class="messlist"><label>url:</label><input type="text" placeholder="请输入图片的网络地址" name="mytext"/><input type="button" class="del" onclick="removeItem(this)" value="删除"/></div>');
+	x=1;
+	node = document.getElementById('myDiv2');
+	while (node.hasChildNodes()) {
+		node.removeChild(node.lastChild);
+	}
+}
+
+</script>
+
+</head>
+
+<body>
+
+	<div class="container">
+		<div class="col-md-12">
+			<h2>人脸图片注册</h2><h4 style="text-align:right;clear:both"><a href="faceRetrieve.html">人脸检索</a></h4>
+			<hr>
+
+			<div class="tab-group">
+			<section id="tab1" title="从本地文件上传">
+
+				<div>
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane pt20 pb20 fade in active" id="demo-default">
+							<div class="row">
+
+								<div class="col-md-6">
+									<b>选择图片(支持批量):</b>
+									<br><br>
+									<form action="" method="post" enctype="multipart/form-data">
+										  <input type="file" name="filename" id="fileInput" accept="image/*" multiple="multiple">
+										  <input type="button" class="btn-custom green" onclick="loadXMLDoc()" value="提交">
+									</form>
+								</div>
+							</div>
+							
+							<br><hr><br>
+							<div class="row" id="myDiv"></div>
+						</div>
+					</div>
+				</div>
+
+			</section>
+
+			<section id="tab2" title="网络URL上传">
+
+				<div>
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane pt20 pb20 fade in active" id="demo-default">
+							<div class="row">
+
+								<input type="button" class="btn-custom blue" onclick="addItem()" value="添加URL"/>
+								<label style="margin-left:10px;"><font color="#FF0000">注: 不支持base64字符串的图片url</font></label>
+								<div id="InputsWrapper" class="messages">
+								     <div class="messlist">
+								      <label>url:</label>
+								      <input type="text" placeholder="请输入图片的网络地址" name="mytext"/>
+								      <input type="button" class="del" onclick="removeItem(this)" value="删除"/>
+								    </div>
+								</div>
+								<input type="button" class="btn-custom green" onclick="submit()" value="提交"/>
+
+							</div>
+							
+							<br><hr><br>
+							<div class="row" id="myDiv2"></div>
+						</div>
+					</div>
+				</div>
+
+			</section>
+			</div>
+
+		</div>
+	</div>
+    <div class="loader" id="loader">
+		<div class="dot"></div>
+		<div class="dot"></div>
+		<div class="dot"></div>
+		<div class="dot"></div>
+		<div class="dot"></div>
+	</div>
+</body>
+</html>

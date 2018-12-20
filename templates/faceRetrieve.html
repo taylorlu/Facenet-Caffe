@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人脸检索</title>
+<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="static/css/jquery.filer.css">
+<link rel="stylesheet" type="text/css" href="static/css/custom.css">
+<style>
+    .containe{
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
+    }
+    .item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #fff;
+        border-radius: .2rem;
+        font-size: .8em;
+        min-height: 7rem;
+        padding: .75rem;
+        color: #f0f0f3;
+        background-color: #dddddd;
+    }
+    .bodyContent{
+        display: grid;
+        grid-auto-flow: row;
+        align-items: center;
+        justify-content: center;
+        text-align:center;
+    }
+    #container2 {
+        position: relative;
+        margin: 50px;
+        border: 1px dashed black;
+        display: inline-block;
+    }
+    #imageDisplay:before, #imageDisplay:after {
+	  content: '';
+	  display: table;
+	  clear: both;
+	}
+	img {
+	  display: block;
+	  width: 100%;
+	  height: 100%;
+	}
+	.image-box {
+	  float: left;
+	  padding: 1px;
+	  overflow: hidden;
+	}
+    #mapBorder {
+        position: absolute;
+        border: 2px solid red;
+        display: none;
+    }
+    #svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    .normalSvgBorder {
+        fill: rgba(220,220,220,0.3);
+        stroke: black;
+        stroke-width: 2;
+        stroke-dasharray: 5;
+    }
+    .focusSvgBorder {
+        fill: transparent;
+        stroke: red;
+        stroke-width: 5;
+    }
+	.class_outer {
+	    display: block;
+	    width: 546px;
+	    height: 276px;
+	    margin: 10px auto;
+	    position: relative;
+	    overflow: hidden;
+	}
+	.class_cover {
+	    width: 100%;
+	    height: 50px;
+	    line-height: 50px;
+	    padding-left: 5px;
+	    background-color: rgba(0, 0, 0, .50);
+	    color: #FFFFFF;
+	    font-size: 15px;
+	    position: absolute;
+	    left: 0px;
+	    bottom: 0px;
+	    text-align:center;
+	}
+    .loader {
+	  position: absolute;
+	  top: 50%;
+	  left: 40%;
+	  margin-left: 10%;
+	  transform: translate3d(-50%, -50%, 0);
+	}
+	.dot {
+	  width: 24px;
+	  height: 24px;
+	  background: #3ac;
+	  border-radius: 100%;
+	  display: inline-block;
+	  animation: slide 1s infinite;
+	}
+	.dot:nth-child(1) {
+	  animation-delay: 0.1s;
+	  background: #32aacc;
+	}
+	.dot:nth-child(2) {
+	  animation-delay: 0.2s;
+	  background: #64aacc;
+	}
+	.dot:nth-child(3) {
+	  animation-delay: 0.3s;
+	  background: #96aacc;
+	}
+	.dot:nth-child(4) {
+	  animation-delay: 0.4s;
+	  background: #c8aacc;
+	}
+	.dot:nth-child(5) {
+	  animation-delay: 0.5s;
+	  background: #faaacc;
+	}
+	@-moz-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@-webkit-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@-o-keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+	@keyframes slide {
+	  0% {
+	    transform: scale(1);
+	  }
+	  50% {
+	    opacity: 0.3;
+	    transform: scale(2);
+	  }
+	  100% {
+	    transform: scale(1);
+	  }
+	}
+</style>
+
+<script src="static/js/jquery-2.1.1.min.js" type="text/javascript"></script>
+<script src="static/js/bootstrap.min.js" type="text/javascript"></script>
+<script src="static/js/jquery.filer.min.js" type="text/javascript"></script>
+<script src="static/js/jquery.filer.js" type="text/javascript"></script>
+<script src="static/js/prettify.js" type="text/javascript"></script>
+<script src="static/js/scripts.js" type="text/javascript"></script>
+<script src="static/js/imagesLayout.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+var curFiles = [];
+Array.prototype.indexOf = function (val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
+
+$(document).ready(function() {
+	$('#fileInput').filer({
+		limit: 1,
+	    maxSize: 100,
+	    extensions: ['jpg', 'jpeg', 'png'],
+	    changeInput: true,
+	    showThumbs: true,
+	    onRemove: function(itemEl, file, id, listEl, boxEl, newInputEl, inputEl){
+	        curFiles.remove(file);
+	    },
+	    onSelect: function(file){
+	    	curFiles = [];
+	    	curFiles.push(file);
+	    }
+    });
+    document.getElementById("loader").style.display="none";
+});
+
+
+function loadXMLDoc(){
+
+	if(curFiles.length==0){alert("请选择图片"); return;}
+
+	var xmlhttp;
+	if (window.XMLHttpRequest){
+		xmlhttp=new XMLHttpRequest();
+	}
+	else{
+		xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+
+    var data = new FormData();
+    data.append(encodeURIComponent(curFiles[0].name), curFiles[0]);
+    data.append("name", encodeURIComponent(curFiles[0].name));
+
+    xmlhttp.open("POST", "{{ faceRetrieve }}", true);
+    xmlhttp.responseType = "";
+    
+	xmlhttp.onreadystatechange=function(){
+		if (xmlhttp.readyState==4 && xmlhttp.status==200){
+			document.getElementById("loader").style.display="none";
+			preview(xmlhttp.responseText);
+		}
+	}
+	var node = document.getElementById('myDiv');
+		while (node.hasChildNodes()) {
+		node.removeChild(node.lastChild);
+	}
+	$('#fileInput').trigger("filer.reset");
+    xmlhttp.send(data);
+    curFiles=[];
+    
+    document.getElementById("loader").style.display="";
+}
+
+
+function preview(jsonStr){
+
+	var obj;
+	try {
+		obj = JSON.parse(jsonStr);
+	}
+	catch(e) {
+		alert(jsonStr);
+		return;
+	}
+	if(obj.faces.length==0) {
+		alert("未检索到相似人脸")
+		return
+	}
+	var images = [];
+	
+	for(var i=0; i<obj.faces.length; i++){(function(){
+
+		let img = document.createElement("img");
+		img.onload=function(){
+
+			images.push(img);
+			if(images.length==obj.faces.length) {
+				const $box = document.getElementById('myDiv');
+				const layout = new ImagesLayout(images, $box.clientWidth, 3);
+				layout.completedImages.forEach(item => {
+					let $imageBox = document.createElement('div');
+					$imageBox.setAttribute('class', 'image-box class_outer');
+					$imageBox.style.width = item.width + 'px';
+					$imageBox.style.height = item.height + 'px';
+
+					var span = document.createElement("span");
+					span.innerHTML = "欧式距离:" + item.prob.toString();
+					span.setAttribute('class', 'class_cover');
+
+					$imageBox.appendChild(item);
+					$imageBox.appendChild(span);
+					$box.appendChild($imageBox);
+				});
+				images = [];
+			}
+
+		}
+		img.src = obj.faces[i].path;
+		img.prob = obj.faces[i].distance;
+
+	})(i)}
+}
+
+
+</script>
+</head>
+<body>
+
+<article class="htmleaf-container">
+	<section id="section4" class="section-white">
+					<a name="demos"></a>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h2>人脸检索</h2><h4 style="text-align:right;clear:both"><a href="faceRegister.html">人脸图片注册</a></h4>
+					<hr>
+				</div>
+				<div>
+
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane pt20 pb20 fade in active" id="demo-default">
+							<div class="row">
+
+								<div class="col-md-6">
+									<b>选择图片:</b>
+									<br><br>
+									<form action="" method="post" enctype="multipart/form-data">
+										  <input type="file" name="filename" id="fileInput"  accept="image/*">
+										  <input type="button" class="btn-custom green" onclick="loadXMLDoc()" value="提交">
+									</form>
+								</div>
+							</div>
+							
+							<br><hr><br>
+							<div class="row" id="myDiv"></div>
+						</div>
+					</div>
+
+				</div>
+				</div>
+			</div>
+		</div>
+
+	</section>
+</article>
+<div class="loader" id="loader">
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+<div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';"></div>
+
+
+</body>
+</html>
