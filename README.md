@@ -53,7 +53,7 @@ The shortcut of code is showing as follows:
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm4.png)
 * #### other tips: 
 1. `net.params['..'][1].data` should be assigned when there is biases in conv layer.
-2. When input by 8x8 feature map, feed into pooling layer by size=3x3, stride=2, the output size of tensorflow is 3x3, but the caffe is 4x4, so should do crop in caffe. Crop layer can be replaced by using kernel [[1,0], [0,0]] of conv2d.
+2. When input by 8x8 feature map, feed into pooling layer by size=3x3, stride=2, the output size of tensorflow is 3x3, but the caffe is 4x4, so it should do crop in caffe. The handy method is replaced crop layer by using kernel [[1,0], [0,0]] of conv2d.
 3. Some versions of caffe has no batchnorm or scale layer, which will indicate some keys can not be found in the future, solution is to change to another version of caffe.
 4. `Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz`, 8 Cores, 32 processors, retrieve speed of HSNW Algorithm is approximate 10ms-20ms, the amount of 100,000 faces, 512D embedding vector each face. Based on MKL BlAS library.
 
