@@ -32,8 +32,11 @@ This project contains:
 
 ## Convert tensorflow model to caffemodel and CoreML:
 * #### Not all layers in tf can be convert to other framework model successfully.
-* #### a conv layer can contain biases or sometimes not, the following map shows no biases in conv operation.
+* #### A conv layer can contain biases or sometimes not, the following map shows no biases in conv operation.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm1.png)
 * #### The difference of batch normalization between tensorflow and caffe.
-
+The expression of batch norm: <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn1.png" alt="failed" width="120"/>
+which has 2 steps:
+1. calculate the mean and variance of vectors of the layer in whole batch. This step is to do normalization. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn3.png" alt="failed" width="70"/>. The parameters of this expression is **not trainable**.
+2. Scale the normalized vectors and shift to new region. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn2.png" alt="failed" width="50"/>. The parameters of this expression is **trainable**.
 
