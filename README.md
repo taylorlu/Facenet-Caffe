@@ -1,4 +1,4 @@
-## FaceAll
+## Facenet-Caffe
 This project contains:
 * A web app based on flask to serve face register and face retrieve.
 * Convert Inception_resnet_v1 model to Caffemodel, and to CoreML model in iOS.
