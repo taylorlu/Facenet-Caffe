@@ -30,7 +30,7 @@ This project contains:
 * ### retrieve html
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/retrieve.png)
 
-## Convert tensorflow model to caffemodel and CoreML:
+## Convert tensorflow model to caffemodel:
 * #### Not all layers in tf can be convert to other framework model successfully.
 * #### A conv layer can contain biases or sometimes not, the following map shows no biases in conv operation.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm1.png)
@@ -43,9 +43,18 @@ which has 2 steps:
 In tensorflow, parameter gamma is fixed to 1.0, so there is only beta can be trained, moving_mean and moving_variance are calculated batch by batch.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm2.png)
 
-But in Caffe, batchnorm layer only do normalization, without rescale and shift, so we must put a scale layer on the top of each batchnorm layer.
+But in Caffe, batchnorm layer only do normalization, without rescale and shift, so we must put a scale layer on the top of each batchnorm layer. And also need to add `bias_term: true` in prototxt, or there will be no beta value.
 
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm3.png)
 
 The shortcut of code is showing as follows:
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm4.png)
+* #### other tips: 
+1. `net.params['..'][1].data` should be assigned when there is biases in conv layer.
+2. Input 8x8 feature map, pooling size=3x3, stride=2, Tensorflow output size is 3x3, Caffe output size is 4x4, need do crop in caffe. Crop layer can be replaced by using kernel [[1,0], [0,0]] of conv2d.
+3. Some versions of caffe has no batchnorm or scale layer, which will indicate some keys can not be found in the future, solution is to change to another version of caffe.
+4. `Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz`, 8 Cores, 32 processors, retrieve speed of HSNW Algorithm is approximate 10ms-20ms, the amount of 100,000 faces, 512D embedding vector each face. Based on MKL BlAS library.
+
+## Convert tensorflow model to CoreML:
+1. InnerProduct warns shape not match, solved by using 1x1 conv2d replace.
+2. Make sure the RGB, ARGB color space in iOS is all right.
