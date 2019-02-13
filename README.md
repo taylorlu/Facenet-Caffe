@@ -13,24 +13,27 @@ This project contains:
 * ### Running
 `python faceServer.py 8000`
 #### The model path and save path is defined in the top of faceServer.py
-`caffe_model_path = "./mtcnn"`
-`imgSavePath = "static/uploadImages"`
-`faceSearchData = "./faceSearchData"`
-`caffePrototxt = 'InceptionResnet_Model/resnetInception.prototxt'`
+`caffe_model_path = "./mtcnn"`</br>
+`imgSavePath = "static/uploadImages"`</br>
+`faceSearchData = "./faceSearchData"`</br>
+`caffePrototxt = 'InceptionResnet_Model/resnetInception.prototxt'`</br>
 `caffemodel = 'InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel'`
-#### The pretrained model of facenet based on caffe can be downloaded in https://pan.baidu.com/s/11_nNcdE-fHuPuL3AWGcgOw
+#### The pretrained model of facenet based on caffe can be downloaded in</br> https://pan.baidu.com/s/11_nNcdE-fHuPuL3AWGcgOw
 
 * ### Outline
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/web.png)
 
 * ### register html
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/urlregister.png)
-![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/localretrieve.png)
+![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/localregister.png)
 
 * ### retrieve html
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/retrieve.png)
 
-## Tips:
+## Convert tensorflow model to caffemodel and CoreML:
+* #### Not all layers in tf can be convert to other framework model successfully.
+* #### a conv layer can contain biases or sometimes not, the following map shows no biases in conv operation.
+![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm1.png)
+* #### The difference of batch normalization between tensorflow and caffe.
 
-#1: BatchNorm, difference between caffe and tensorflow.
 
