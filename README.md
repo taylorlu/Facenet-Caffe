@@ -37,6 +37,15 @@ This project contains:
 * #### The difference of batch normalization between tensorflow and caffe.
 The expression of batch norm: <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn1.png" alt="failed" width="120"/>
 which has 2 steps:
-1. calculate the mean and variance of vectors of the layer in whole batch. This step is to do normalization. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn3.png" alt="failed" width="70"/>. The parameters of this expression is **not trainable**.
-2. Scale the normalized vectors and shift to new region. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn2.png" alt="failed" width="50"/>. The parameters of this expression is **trainable**.
+1. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn3.png" alt="failed" width="70"/>.  Calculate the mean and variance of vectors in the layer of whole batch. This step is to do normalization. The 2 parameters of this expression is **Not Trainable**.
+2. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn2.png" alt="failed" width="100"/>.  Scale the normalized vectors and shift to new region. The 2 parameters of this expression is **Trainable**.
 
+In tensorflow, parameter gamma is fixed to 1.0, so there is only beta can be trained, moving_mean and moving_variance are calculated batch by batch.
+![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm2.png)
+
+But in Caffe, batchnorm layer only do normalization, without rescale and shift, so we must put a scale layer on the top of each batchnorm layer.
+
+![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm3.png)
+
+The shortcut of code is showing as follows:
+![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm4.png)
