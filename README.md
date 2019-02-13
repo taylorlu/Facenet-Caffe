@@ -40,7 +40,7 @@ which has 2 steps:
 1. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn3.png" alt="failed" width="70"/>.  Calculate the mean and variance of vectors in the layer of whole batch. This step is to do normalization. The 2 parameters of this expression is **Not Trainable**.
 2. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn2.png" alt="failed" width="100"/>.  Scale the normalized vectors and shift to new region. The 2 parameters of this expression is **Trainable**.
 
-In tensorflow, parameter gamma is fixed to 1.0, so there is only beta can be trained, moving_mean and moving_variance are calculated batch by batch.
+In tensorflow, parameter gamma is fixed to 1.0, so the only trainable parameter is beta, moving_mean and moving_variance are calculated batch by batch.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm2.png)
 
 But in Caffe, batchnorm layer only do normalization, without rescale and shift, so we must put a scale layer on the top of each batchnorm layer. And also need to add `bias_term: true` in prototxt, or there will be no beta value.
