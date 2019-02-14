@@ -29,6 +29,18 @@ This project contains:
 
 * ### retrieve html
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/retrieve.png)
+* #### API Response
+1. POST /faceRegister
+
+`"faces": [{"BoxsPoints": [{"box": [639, 83, 824, 316], "pt": [671, 757, 712, 693, 764, 171, 157, 214, 263, 252]}, {"box": [252, 85, 456, 357], "pt": [309, 402, 353, 304, 395, 192, 197, 250, 285, 291]}], "name": "5252ab74-de19-4a35-ba2b-b96379c18055.jpg"}]}`
+
+2. POST /faceRegisterBatch
+
+`{"faces": [{"BoxsPoints": [{"box": [104, 146, 145, 196], "pt": [111, 127, 117, 118, 132, 167, 163, 178, 188, 184]}, {"box": [279, 80, 327, 144], "pt": [287, 307, 295, 292, 310, 107, 105, 123, 132, 130]}, {"box": [0, 152, 38, 211], "pt": [12, 32, 22, 10, 26, 174, 177, 185, 194, 197]}, {"box": [161, 99, 207, 159], "pt": [172, 193, 183, 174, 194, 123, 122, 134, 143, 143]}], "name": "http://img1.imgtn.bdimg.com/it/u=1446904722,2747785645&fm=26&gp=0.jpg"}, {"BoxsPoints": [{"box": [188, 37, 264, 137], "pt": [216, 250, 241, 219, 250, 80, 77, 102, 118, 116]}], "name": "http://img3.imgtn.bdimg.com/it/u=2577494811,3655771084&fm=26&gp=0.jpg"}]}`
+
+3. POST /faceRetrieve
+
+`{"faces": [{"distance": 0.23119516670703888, "path": "static/uploadImages/1550042580.7593167.jpg"}, {"distance": 0.31492435932159424, "path": "static/uploadImages/1550042916.6169314.jpg"}, {"distance": 0.46090781688690186, "path": "static/uploadImages/1550042916.6169314.jpg"}, {"distance": 0.48163485527038574, "path": "static/uploadImages/1550042916.206.jpg"}]}`
 
 ## Convert tensorflow model to caffemodel:
 * #### Not all layers in tf can be convert to other framework model successfully.
