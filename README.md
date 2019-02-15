@@ -43,7 +43,7 @@ This project contains:
 `{"faces": [{"distance": 0.23119516670703888, "path": "static/uploadImages/1550042580.7593167.jpg"}, {"distance": 0.31492435932159424, "path": "static/uploadImages/1550042916.6169314.jpg"}, {"distance": 0.46090781688690186, "path": "static/uploadImages/1550042916.6169314.jpg"}, {"distance": 0.48163485527038574, "path": "static/uploadImages/1550042916.206.jpg"}]}`
 
 ## Convert tensorflow model to caffemodel:
-* #### Not all layers in tf can be convert to other framework model successfully.
+* #### Not all layers in tf can be converted to other framework model successfully.
 * #### A conv layer can contain bias or sometimes not, the following map shows no bias in conv operation.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm1.png)
 * #### The difference of batch normalization between tensorflow and caffe.
