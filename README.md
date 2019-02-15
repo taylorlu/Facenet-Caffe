@@ -2,7 +2,7 @@
 This project contains:
 * A web app based on flask to serve face register and face retrieve.
 * Convert Inception_resnet_v1 model to Caffemodel, and to CoreML model in iOS.
-
+* The iOS App can be found in [face_recognition_ios](https://github.com/taylorlu/face_recognition_ios)
 ## Prerequisites
 1. Flask
 2. pyw_hnswlib [fast approximate nearest neighbors](https://github.com/nmslib/hnswlib)
