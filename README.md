@@ -44,7 +44,7 @@ This project contains:
 
 ## Convert tensorflow model to caffemodel:
 * #### Not all layers in tf can be convert to other framework model successfully.
-* #### A conv layer can contain biases or sometimes not, the following map shows no biases in conv operation.
+* #### A conv layer can contain bias or sometimes not, the following map shows no bias in conv operation.
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm1.png)
 * #### The difference of batch normalization between tensorflow and caffe.
 The expression of batch norm: <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn1.png" alt="failed" width="120"/>
@@ -52,7 +52,7 @@ which has 2 steps:
 1. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn3.png" alt="failed" width="70"/>.  Calculate the mean and variance of vectors in the layer of whole batch. This step is to do normalization. The 2 parameters of this expression is **Not Trainable**.
 2. <img src="https://github.com/taylorlu/FaceAll/blob/master/resource/bn2.png" alt="failed" width="100"/>.  Scale the normalized vectors and shift to new region. The 2 parameters of this expression is **Trainable**.
 
-In tensorflow, parameter gamma is fixed to 1.0, so the only trainable parameter is beta, moving_mean and moving_variance are calculated batch by batch.
+In tensorflow, parameter gamma is fixed to 1.0, so the only trainable parameter is **beta**, `moving_mean` and `moving_variance` are calculated batch by batch.
 
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm2.png)
 
@@ -65,7 +65,7 @@ The shortcut of code is showing as follows:
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/batchnorm4.png)
 * #### other tips: 
 1. `net.params['..'][1].data` should be assigned when there is biases in conv layer.
-2. When input by 8x8 feature map, feed into pooling layer by size=3x3, stride=2, the output size of tensorflow is 3x3, but the caffe is 4x4, so it should do crop in caffe. The handy method is replaced crop layer by using kernel [[1,0], [0,0]] of conv2d.
+2. When input by 8x8 feature map, feed into pooling layer by size=3x3, stride=2, the output size of tensorflow is 3x3, but the caffe is 4x4, so it should do crop in caffe. The handy method is to replace crop layer by using kernel [[1,0], [0,0]] of conv2d.
 3. Some versions of caffe has no batchnorm or scale layer, which will indicate some keys can not be found in the future, solution is to change to another version of caffe.
 4. `Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz`, 8 Cores, 32 processors, retrieve speed of HSNW Algorithm is approximate 10ms-20ms, the amount of 100,000 faces, 512D embedding vector each face. Based on MKL BlAS library.
 
