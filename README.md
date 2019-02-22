@@ -18,7 +18,9 @@ This project contains:
 `faceSearchData = "./faceSearchData"`</br>
 `caffePrototxt = 'InceptionResnet_Model/resnetInception.prototxt'`</br>
 `caffemodel = 'InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel'`
-#### The pretrained model of facenet based on caffe can be downloaded in</br> https://pan.baidu.com/s/11_nNcdE-fHuPuL3AWGcgOw
+#### The pretrained model of facenet based on caffe can be downloaded in</br> https://pan.baidu.com/s/11_nNcdE-fHuPuL3AWGcgOw</br>
+#### which convert from tfmodel</br>
+https://drive.google.com/file/d/1EXPBSXwTaqrSC0OhUdXNmKSh9qJUQ55-/view
 
 * ### Outline
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/web.png)
