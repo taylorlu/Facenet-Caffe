@@ -27,7 +27,7 @@ imgSavePath = "static/uploadImages"
 
 max_elements = 10*10000
 faceSearchData = "./faceSearchData"
-hnswModel = hnswlib.Index(space='l2', dim=512)
+hnswModel = hnswlib.Index(space='l2', dim=128)
 dThreshold = 0.6
 port = 9090
 
@@ -36,7 +36,7 @@ PNet = caffe.Net(caffe_model_path+"/det1.prototxt", caffe_model_path+"/det1.caff
 RNet = caffe.Net(caffe_model_path+"/det2.prototxt", caffe_model_path+"/det2.caffemodel", caffe.TEST)
 ONet = caffe.Net(caffe_model_path+"/det3.prototxt", caffe_model_path+"/det3.caffemodel", caffe.TEST)
 
-caffePrototxt = 'InceptionResnet_Model/resnetInception.prototxt'
+caffePrototxt = 'InceptionResnet_Model/resnetInception-128.prototxt'
 caffemodel = 'InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel'
 net = caffe.Net(caffePrototxt, caffemodel, caffe.TEST)
 
@@ -95,13 +95,44 @@ def mtcnnDetect(image):
     vectors = []
 
     for i in range(boundingboxes.shape[0]):
-        if(boundingboxes[i][1]<0):
-            boundingboxes[i][1] = 0
-        if(boundingboxes[i][0]<0):
-            boundingboxes[i][0] = 0
-        warped = img_matlab[int(boundingboxes[i][1]):int(boundingboxes[i][3]), int(boundingboxes[i][0]):int(boundingboxes[i][2])]
+
+        left = boundingboxes[i][0]
+        right = boundingboxes[i][2]
+        top = boundingboxes[i][1]
+        bottom = boundingboxes[i][3]
+        
+        old_size = (right-left+bottom-top)/2.0
+        centerX = right - (right-left)/2.0
+        centerY = bottom - (bottom-top)/2 + old_size*0.1
+        size = int(old_size*1.15)
+        
+        x1 = int(centerX-size/2)
+        y1 = int(centerY-size/2)
+        x2 = int(centerX+size/2)
+        y2 = int(centerY+size/2)
+        width = x2 - x1
+        height = y2 - y1
+        
+        rectify_x1 = x1
+        rectify_y1 = y1
+        warped = img_matlab
+
+        if(x2>img_matlab.shape[1]):
+            warped = cv2.copyMakeBorder(img_matlab, 0, 0, 0, x2-img_matlab.shape[1], cv2.BORDER_CONSTANT)
+        if(x1<0):
+            warped = cv2.copyMakeBorder(img_matlab, 0, 0, -x1, 0, cv2.BORDER_CONSTANT)
+            rectify_x1 = 0
+        if(y2>img_matlab.shape[0]):
+            warped = cv2.copyMakeBorder(img_matlab, 0, y2-img_matlab.shape[0], 0, 0, cv2.BORDER_CONSTANT)
+        if(y1<0):
+            warped = cv2.copyMakeBorder(img_matlab, -y1, 0, 0, 0, cv2.BORDER_CONSTANT)
+            rectify_y1 = 0
+
+        warped = img_matlab[rectify_y1:y2, rectify_x1:x2]
+
         vector = calcCaffeVector(warped)
         vectors.append(vector)
+
     return boundingboxes, points, vectors
 
 
