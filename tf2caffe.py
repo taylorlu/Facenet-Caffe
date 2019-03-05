@@ -19,11 +19,14 @@ def tic():
 def toc(fmt="Elapsed: %s s"):
     print(fmt % (time()-_tstart_stack.pop()))
 
+FACE_FEED_SIZE = 160    # default 160x160
+EMBEDDING_SIZE = 128    # face embedding vector output, default 512
+
 def load_model(model, input_map=None):  # load tf model from dir
     model_exp = os.path.expanduser(model)
     print('Model directory: %s' % model_exp)
-    meta_file = 'model-20180402-114759.meta'
-    ckpt_file = 'model-20180402-114759.ckpt-275'
+    meta_file = 'model-20170512-110547.meta'
+    ckpt_file = 'model-20170512-110547.ckpt-250000'
 
     saver = tf.train.import_meta_graph(os.path.join(model_exp, meta_file), input_map=input_map)
     saver.restore(tf.get_default_session(), os.path.join(model_exp, ckpt_file))
@@ -252,8 +255,12 @@ def Bottleneck(sess, net):
     net.params[caffeLayerName+'/Scale'][1].data[...] = var1
     return net
 
-def Bottleneck_conv1x1_512(sess, net):
+def Bottleneck_conv1x1(sess, net, embedding_size):
+
     caffeLayerName = 'Conv1x1_512'
+    if(embedding_size==128):
+        caffeLayerName = 'Conv1x1_128'
+
     tfLayerName = 'InceptionResnetV1/Bottleneck'
     var1 = sess.run(tf.get_default_graph().get_tensor_by_name(tfLayerName+'/weights:0'))
     print(var1.transpose((1,0)).shape)
@@ -293,12 +300,12 @@ def normL2Vector(bottleNeck):
         vector[i] = v/sqrt
     return vector.astype(np.float32)
 
-def convertTf2Caffe(model_dir, saveDir):
+def convertTf2Caffe(model_dir, saveDir, embedding_size=512):
 
     with tf.Session() as sess:
         load_model(model_dir)
 
-        srandData = np.random.random((1,160,160,3))
+        srandData = np.random.random((1, FACE_FEED_SIZE, FACE_FEED_SIZE, 3))
         inputTF = srandData #[1,160,160,3]
         inputCaffe = srandData.transpose((0,3,1,2)) #[1,3,160,160]
 
@@ -308,7 +315,10 @@ def convertTf2Caffe(model_dir, saveDir):
         feed_dict = { images_placeholder: inputTF, phase_train_placeholder:False }
         embedding = sess.run(embeddings, feed_dict=feed_dict)[0]
 
-        caffePrototxt = os.path.join(saveDir, 'resnetInception.prototxt')
+        caffePrototxt = os.path.join(saveDir, 'resnetInception-512.prototxt')
+        if(embedding_size==128):
+            caffePrototxt = os.path.join(saveDir, 'resnetInception-128.prototxt')
+
         net = caffe.Net(caffePrototxt, caffe.TEST)
 
         # Conv + BatchNorm + Scale + Relu
@@ -327,7 +337,7 @@ def convertTf2Caffe(model_dir, saveDir):
         net = Block8_Repeat(sess, net)
         net = Block8(sess, net)
         # Bottleneck(sess, net)
-        net = Bottleneck_conv1x1_512(sess, net)
+        net = Bottleneck_conv1x1(sess, net, embedding_size)
         # var1 = sess.run(tf.get_default_graph().get_tensor_by_name('InceptionResnetV1/Conv2d_1a_3x3/BatchNorm/beta:0'))
         # net.params['Conv2d_1a_3x3/BatchNorm'][0].data[...] = var1
         net.blobs['data'].data[...] = inputCaffe
@@ -341,13 +351,17 @@ def convertTf2Caffe(model_dir, saveDir):
         # print(net.blobs['Conv2d_1a_3x3'].data.transpose((0, 2, 3, 1)))
         # print(net.params['Conv2d_1a_3x3'][0].data[...])
 
-def calcCaffeVector(img, model_dir):
+def calcCaffeVector(img, model_dir, embedding_size=512):
 
-    img = cv2.resize(img, (160,160))
+    img = cv2.resize(img, (FACE_FEED_SIZE, FACE_FEED_SIZE))
     prewhitened = prewhiten(img)[np.newaxis]
     inputCaffe = prewhitened.transpose((0,3,1,2)) #[1,3,160,160]
     print(inputCaffe.shape)
-    caffePrototxt = os.path.join(model_dir, 'resnetInception.prototxt')
+
+    caffePrototxt = os.path.join(model_dir, 'resnetInception-512.prototxt')
+    if(embedding_size==128):
+        caffePrototxt = os.path.join(model_dir, 'resnetInception-128.prototxt')
+
     caffemodel = os.path.join(model_dir, 'inception_resnet_v1_conv1x1.caffemodel')
     net = caffe.Net(caffePrototxt, caffemodel, caffe.TEST)
     net.blobs['data'].data[...] = inputCaffe
@@ -362,7 +376,7 @@ def calcTFVector(img, model_dir):
     with tf.Session() as sess:
         load_model(model_dir)
 
-        img = cv2.resize(img, (160,160))
+        img = cv2.resize(img, (FACE_FEED_SIZE, FACE_FEED_SIZE))
         inputTF = prewhiten(img)[np.newaxis]
         print(inputTF.shape)
 
@@ -409,29 +423,35 @@ def mtcnnDetect(img):
     warped = img_matlab[int(boundingboxes[0][1]):int(boundingboxes[0][3]),
                         int(boundingboxes[0][0]):int(boundingboxes[0][2])]
     print(int(boundingboxes[0][1]), int(boundingboxes[0][3]), int(boundingboxes[0][0]), int(boundingboxes[0][2]))
-    warped = cv2.resize(warped, (160,160))
     return warped
 
+
 ### Step 1: tensorflow to caffemodel
-model_dir = '/home/logview/workspace/projects/FaceAll/20180402-114759'
-convertTf2Caffe(model_dir, 'InceptionResnet_Model')
+tf_model_dir = '/home/logview/workspace/projects/FaceAll/20170512-110547'
+convertTf2Caffe(tf_model_dir, 'InceptionResnet_Model', EMBEDDING_SIZE)
+
 
 ### Step 2: caffemodel to CoreML
 ### use parameter (image_input_names='data') ==> input CVPixelBufferRef in iOS
 ### (without image_input_names='data') ==> input MLMultiArray in iOS
-coreml_model = coremltools.converters.caffe.convert(('InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel', 'InceptionResnet_Model/resnetInception.prototxt'), is_bgr=True)
-coreml_model.save('InceptionResnet_Model/InceptionResnet.mlmodel')
+if(EMBEDDING_SIZE==512):
+    coreml_model = coremltools.converters.caffe.convert(('InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel', 'InceptionResnet_Model/resnetInception-512.prototxt'), is_bgr=False)
+    coreml_model.save('InceptionResnet_Model/InceptionResnet.mlmodel')
+else:
+    coreml_model = coremltools.converters.caffe.convert(('InceptionResnet_Model/inception_resnet_v1_conv1x1.caffemodel', 'InceptionResnet_Model/resnetInception-128.prototxt'), is_bgr=False)
+    coreml_model.save('InceptionResnet_Model/InceptionResnet.mlmodel')
+
 
 ### Step 3: calculate embedding from tensorflow model
-imgPath = '38967138.jpg'
-img = cv2.imread(imgPath)
-crop = mtcnnDetect(img)
-model_dir = '/home/logview/workspace/projects/FaceAll/20180402-114759'
-calcTFVector(crop, model_dir)
+imgPath = '4550.jpg'
+img = cv2.imread(imgPath)   # BGR
+crop = mtcnnDetect(img)     # RGB
+calcTFVector(crop, tf_model_dir)
+
 
 ### Step 4: calculate embedding from caffe model
-imgPath = '38967138.jpg'
+imgPath = '4550.jpg'
 img = cv2.imread(imgPath)
 crop = mtcnnDetect(img)
-model_dir = 'InceptionResnet_Model'
-calcCaffeVector(crop, model_dir)
+caffe_model_dir = 'InceptionResnet_Model'
+calcCaffeVector(crop, caffe_model_dir, EMBEDDING_SIZE)
