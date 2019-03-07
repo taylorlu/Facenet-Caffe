@@ -14,6 +14,8 @@ import time
 import cv2
 from random import shuffle
 import networkx as nx
+import uuid
+import sqlite3
 
 minsize = 40
 threshold = [0.8, 0.8, 0.6]
@@ -28,7 +30,7 @@ ONet = caffe.Net(caffe_model_path+"/det3.prototxt", caffe_model_path+"/det3.caff
 
 def face_distance(face_encodings, face_to_compare):
     """
-    Given a list of face encodings, compare them to a known face encoding and get a euclidean distance
+    Given a list of face encodings, compare them to a known face encoding and get a cos distance
     for each comparison face. The distance tells you how similar the faces are.
     :param faces: List of face encodings to compare
     :param face_to_compare: A face encoding to compare against
@@ -58,7 +60,7 @@ def calcCaffeVector(net,image):
     vector = normL2Vector(net.blobs['flatten'].data.squeeze())
     return vector
 
-def mtcnnDetect(image, imgpath_list):
+def mtcnnDetect(image):
 
     if(image.shape[2]!=3 and image.shape[2]!=4):
         return [],[],[]
@@ -73,7 +75,8 @@ def mtcnnDetect(image, imgpath_list):
 
     # boundingboxes: [None, 5] => the last dim is probability.
     boundingboxes, points = mtcnn.detect_face(img_matlab, minsize, PNet, RNet, ONet, threshold, False, factor)
-    vectors = []
+    boundingboxes = boundingboxes.astype(np.int32)
+    warpedFaces = []
 
     for i in range(boundingboxes.shape[0]):
 
@@ -81,7 +84,7 @@ def mtcnnDetect(image, imgpath_list):
         right = boundingboxes[i][2]
         top = boundingboxes[i][1]
         bottom = boundingboxes[i][3]
-        
+
         old_size = (right-left+bottom-top)/2.0
         centerX = right - (right-left)/2.0
         centerY = bottom - (bottom-top)/2 + old_size*0.1
@@ -109,19 +112,20 @@ def mtcnnDetect(image, imgpath_list):
             warped = cv2.copyMakeBorder(img_matlab, -y1, 0, 0, 0, cv2.BORDER_CONSTANT)
             rectify_y1 = 0
 
-        warped = image[rectify_y1:y2, rectify_x1:x2]
+        warped = warped[rectify_y1:y2, rectify_x1:x2]
+        warpedFaces.append(warped)
 
-        ct = time.time()
-        local_time = time.localtime(ct)
-        data_head = time.strftime("%Y%m%d%H%M%S", local_time)
-        data_secs = (ct - int(ct)) * 1000
-        time_stamp = "%s.%03d" % (data_head, data_secs)
+        if(left<0):
+            boundingboxes[i][0] = 0
+        if(top<0):
+            boundingboxes[i][1] = 0
+        if(right>img_matlab.shape[1]):
+            boundingboxes[i][2] = img_matlab.shape[1]
+        if(bottom>img_matlab.shape[0]):
+            boundingboxes[i][3] = img_matlab.shape[0]
 
-        imgpath = os.path.join('face_dir', time_stamp+'.jpg')
-        cv2.imwrite(imgpath, warped)
-        imgpath_list.append(imgpath)
+    return boundingboxes, warpedFaces
 
-    return imgpath_list
 
 def normL2Vector(bottleNeck):
     sum = 0
@@ -145,7 +149,7 @@ def _chinese_whispers(encoding_list, threshold=0.55, iterations=20):
         iterations: since chinese whispers is an iterative algorithm, number of times to iterate
 
     Outputs:
-        sorted_clusters: a list of clusters, a cluster being a list of imagepaths,
+        sorted_clusters: a list of clusters, a cluster being a list of faceId,
             sorted by largest cluster to smallest
     """
 
@@ -157,7 +161,7 @@ def _chinese_whispers(encoding_list, threshold=0.55, iterations=20):
     nodes = []
     edges = []
 
-    image_paths, encodings = zip(*encoding_list)
+    faceIds, encodings = zip(*encoding_list)
 
     if len(encodings) <= 1:
         print ("No enough encodings to cluster!")
@@ -168,7 +172,7 @@ def _chinese_whispers(encoding_list, threshold=0.55, iterations=20):
         node_id = idx+1
 
         # Initialize 'cluster' to unique value (cluster of itself)
-        node = (node_id, {'cluster': image_paths[idx], 'path': image_paths[idx]})
+        node = (node_id, {'cluster': faceIds[idx], 'path': faceIds[idx]})
         nodes.append(node)
 
         # Facial encodings to compare
@@ -241,10 +245,10 @@ def cluster_facial_encodings(facial_encodings):
         only chinese whispers is available.
 
         Input:
-            facial_encodings: (image_path, facial_encoding) dictionary of facial encodings
+            facial_encodings: (faceId, facial_encoding) dictionary of facial encodings
 
         Output:
-            sorted_clusters: a list of clusters, a cluster being a list of imagepaths,
+            sorted_clusters: a list of clusters, a cluster being a list of faceId,
                 sorted by largest cluster to smallest
 
     """
@@ -257,8 +261,8 @@ def cluster_facial_encodings(facial_encodings):
     sorted_clusters = _chinese_whispers(facial_encodings.items())
     return sorted_clusters
 
-def compute_facial_encodings(net,image_size,
-                    embedding_size,nrof_images,nrof_batches,emb_array,batch_size,paths):
+def compute_facial_encodings(net, image_paths):
+
     """ Compute Facial Encodings
 
         Given a set of images, compute the facial encodings of each face detected in the images and
@@ -268,29 +272,48 @@ def compute_facial_encodings(net,image_size,
             image_paths: a list of image paths
 
         Outputs:
-            facial_encodings: (image_path, facial_encoding) dictionary of facial encodings
+            facial_encodings: (faceId, facial_encoding) dictionary of facial encodings
 
     """
 
-    for i in range(nrof_batches):
-        start_index = i*batch_size
-        end_index = min((i+1)*batch_size, nrof_images)
-        paths_batch = paths[start_index:end_index]
-        vectors = []
+    vectors = []
+    features = []
+    faceIds = []
+    pts = []
+    picPaths = []
+    facial_encodings = {}
 
-        for i in range(len(paths_batch)):
-            img = misc.imread(paths_batch[i])   # BGR
-            vector = calcCaffeVector(net,img)
+    for i in range(len(image_paths)):
+
+        img = cv2.imread(image_paths[i])   # BGR
+        boundingboxes, warpedFaces = mtcnnDetect(img)
+
+        for j in range(len(warpedFaces)):
+            vector = calcCaffeVector(net, warpedFaces[j])
             vectors.append(vector)
 
-        emb_array[start_index:end_index,:] = np.array(vectors)
+            feature = ''
+            for v in vector:    # float vector to str '1.0,2.2,3.2,...'
+                feature.join(str(v))
+                feature.join(',')
+            feature = feature[:-1]
+            features.append(feature)
 
-    facial_encodings = {}
-    for x in range(nrof_images):
-        facial_encodings[paths[x]] = emb_array[x,:]
+            left = boundingboxes[j][0]
+            right = boundingboxes[j][2]
+            top = boundingboxes[j][1]
+            bottom = boundingboxes[j][3]
+            pt = '{},{},{},{}'.format(left,top,right,bottom)
+            pts.append(pt)
 
+            faceId = str(uuid.uuid1())
+            faceIds.append(faceId)
+            picPaths.append(image_paths[i])
 
-    return facial_encodings
+            facial_encodings[faceId] = vector
+
+    return facial_encodings, features, faceIds, pts, picPaths
+
 
 def get_onedir(paths):
     dataset = []
@@ -323,10 +346,6 @@ def main(args):
         makedirs(args.output)
 
     image_paths = get_onedir(args.input)
-    imgpath_list = []
-    for imgpath in image_paths:
-        img = cv2.imread(imgpath)
-        imgpath_list = mtcnnDetect(img, imgpath_list)
 
     image_size = 160
     embedding_size = 128
@@ -338,22 +357,22 @@ def main(args):
     # Run forward pass to calculate embeddings
     print('Runnning forward pass on images') 
 
-    nrof_images = len(imgpath_list)
-    nrof_batches = int(math.ceil(1.0*nrof_images / args.batch_size))
-    emb_array = np.zeros((nrof_images, embedding_size))
-    facial_encodings = compute_facial_encodings(net,image_size,
-        embedding_size,nrof_images,nrof_batches,emb_array,args.batch_size,imgpath_list)
+    facial_encodings, features, faceIds, pts, picPaths = compute_facial_encodings(net, image_paths)
     sorted_clusters = cluster_facial_encodings(facial_encodings)
     num_cluster = len(sorted_clusters)
-        
-    # Copy image files to cluster folders
+
     for idx, cluster in enumerate(sorted_clusters):
-        #save all the cluster
+        #all the cluster
         cluster_dir = join(args.output, str(idx))
         if not exists(cluster_dir):
             makedirs(cluster_dir)
-        for path in cluster:
-            shutil.copy(path, join(cluster_dir, basename(path)))
+        for faceId in cluster:
+            ii = faceIds.index(faceId)
+            img = cv2.imread(picPaths[ii])
+            pt = np.array(pts[ii].split(',')).astype(np.int32)
+
+            faceArea = img[pt[1]:pt[3], pt[0]:pt[2]]
+            cv2.imwrite(join(cluster_dir, faceId+'.jpg'), faceArea)
 
 
 def parse_args():
@@ -361,7 +380,6 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='Get a shape mesh (t-pose)')
     parser.add_argument('--model_dir', type=str, help='model dir', required=True)
-    parser.add_argument('--batch_size', type=int, help='batch size', required=30)
     parser.add_argument('--input', type=str, help='Input dir of images', required=True)
     parser.add_argument('--output', type=str, help='Output dir of clusters', required=True)
     args = parser.parse_args()
@@ -371,3 +389,54 @@ def parse_args():
 if __name__ == '__main__':
     """ Entry point """
     main(parse_args())
+
+
+    # import uuid
+    # import sqlite3
+
+    # conn = sqlite3.connect('facelive.db')
+    # print("Opened database successfully")
+    # c = conn.cursor()
+    # c.execute('''CREATE TABLE FACELIVE
+    #        (ID INTEGER PRIMARY KEY  AUTOINCREMENT,
+    #        FaceId           VARCHAR(40)     NOT NULL,
+    #        Feature          TEXT            NOT NULL,
+    #        PicPath          VARCHAR(255)    NOT NULL,
+    #        ClusterId        INT             NOT NULL,
+    #        PT               VARCHAR(255)    NOT NULL);''')
+    # print("Table created successfully")
+    # conn.commit()
+
+    # query = "INSERT INTO FACELIVE (FaceId,Feature,PicPath,ClusterId,PT) VALUES (?,?,?,?,?)"
+    # columns = ['FaceId', 'Feature', 'PicPath', 'ClusterId', 'PT']
+
+    # a={}
+    # b={}
+    # a['FaceId'] =  str(uuid.uuid1())
+    # a['Feature'] = '1,2,3,4,5'
+    # a['PicPath'] = '/data/a.jpg'
+    # a['ClusterId'] = 1
+    # a['PT'] = '10,20,30,40'
+
+    # b['FaceId'] =  str(uuid.uuid1())
+    # b['Feature'] = '2,1,1,1,1'
+    # b['PicPath'] = '/data/b.jpg'
+    # b['ClusterId'] = 2
+    # b['PT'] = '101,210,1,140'
+
+    # items = [a,b]
+
+    # for data in items:
+    #     keys = tuple(data[c] for c in columns)
+    #     c = conn.cursor()
+    #     c.execute(query, keys)
+    #     c.close()
+
+    # conn.commit()
+
+
+    # conn = sqlite3.connect('facelive.db')
+    # print("Opened database successfully")
+    # query = "select * from FACELIVE"
+    # for row in conn.execute(query):
+    #     print(row)
