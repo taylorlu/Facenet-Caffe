@@ -92,6 +92,7 @@ def mtcnnDetect(image):
 
     # boundingboxes: [None, 5] => the last dim is probability.
     boundingboxes, points = mtcnn.detect_face(img_matlab, minsize, PNet, RNet, ONet, threshold, False, factor)
+    boundingboxes = boundingboxes.astype(np.int32)
     vectors = []
 
     for i in range(boundingboxes.shape[0]):
@@ -133,6 +134,15 @@ def mtcnnDetect(image):
         vector = calcCaffeVector(warped)
         vectors.append(vector)
 
+        if(left<0):
+            boundingboxes[i][0] = 0
+        if(top<0):
+            boundingboxes[i][0] = 0
+        if(right>img_matlab.shape[1]):
+            boundingboxes[i][0] = img_matlab.shape[1]
+        if(bottom>img_matlab.shape[0]):
+            boundingboxes[i][0] = img_matlab.shape[0]
+
     return boundingboxes, points, vectors
 
 
@@ -162,10 +172,10 @@ def faceRegister():
                 filenames.append(filename)
                 boxPtDict = {}
                 box = []
-                box.append(int(boundingboxes[i][0]))
-                box.append(int(boundingboxes[i][1]))
-                box.append(int(boundingboxes[i][2]))
-                box.append(int(boundingboxes[i][3]))
+                box.append(boundingboxes[i][0])
+                box.append(boundingboxes[i][1])
+                box.append(boundingboxes[i][2])
+                box.append(boundingboxes[i][3])
                 boxPtDict["box"] = box
 
                 pts = []
@@ -238,10 +248,10 @@ def faceRegisterBatch():
                 filenames.append(filename)
                 boxPtDict = {}
                 box = []
-                box.append(int(boundingboxes[i][0]))
-                box.append(int(boundingboxes[i][1]))
-                box.append(int(boundingboxes[i][2]))
-                box.append(int(boundingboxes[i][3]))
+                box.append(boundingboxes[i][0])
+                box.append(boundingboxes[i][1])
+                box.append(boundingboxes[i][2])
+                box.append(boundingboxes[i][3])
                 boxPtDict["box"] = box
 
                 pts = []
