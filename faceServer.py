@@ -128,7 +128,7 @@ def mtcnnDetect(image):
             warped = cv2.copyMakeBorder(img_matlab, -y1, 0, 0, 0, cv2.BORDER_CONSTANT)
             rectify_y1 = 0
 
-        warped = img_matlab[rectify_y1:y2, rectify_x1:x2]
+        warped = warped[rectify_y1:y2, rectify_x1:x2]
 
         vector = calcCaffeVector(warped)
         vectors.append(vector)
