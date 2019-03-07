@@ -172,10 +172,10 @@ def faceRegister():
                 filenames.append(filename)
                 boxPtDict = {}
                 box = []
-                box.append(boundingboxes[i][0])
-                box.append(boundingboxes[i][1])
-                box.append(boundingboxes[i][2])
-                box.append(boundingboxes[i][3])
+                box.append(int(boundingboxes[i][0]))
+                box.append(int(boundingboxes[i][1]))
+                box.append(int(boundingboxes[i][2]))
+                box.append(int(boundingboxes[i][3]))
                 boxPtDict["box"] = box
 
                 pts = []
@@ -248,10 +248,10 @@ def faceRegisterBatch():
                 filenames.append(filename)
                 boxPtDict = {}
                 box = []
-                box.append(boundingboxes[i][0])
-                box.append(boundingboxes[i][1])
-                box.append(boundingboxes[i][2])
-                box.append(boundingboxes[i][3])
+                box.append(int(boundingboxes[i][0]))
+                box.append(int(boundingboxes[i][1]))
+                box.append(int(boundingboxes[i][2]))
+                box.append(int(boundingboxes[i][3]))
                 boxPtDict["box"] = box
 
                 pts = []
