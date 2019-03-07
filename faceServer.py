@@ -137,11 +137,11 @@ def mtcnnDetect(image):
         if(left<0):
             boundingboxes[i][0] = 0
         if(top<0):
-            boundingboxes[i][0] = 0
+            boundingboxes[i][1] = 0
         if(right>img_matlab.shape[1]):
-            boundingboxes[i][0] = img_matlab.shape[1]
+            boundingboxes[i][2] = img_matlab.shape[1]
         if(bottom>img_matlab.shape[0]):
-            boundingboxes[i][0] = img_matlab.shape[0]
+            boundingboxes[i][3] = img_matlab.shape[0]
 
     return boundingboxes, points, vectors
 
