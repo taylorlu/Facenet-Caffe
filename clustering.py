@@ -15,7 +15,8 @@ import cv2
 from random import shuffle
 import networkx as nx
 import uuid
-import sqlite3
+# import sqlite3
+from imutils import paths
 
 minsize = 40
 threshold = [0.8, 0.8, 0.6]
@@ -62,11 +63,15 @@ def calcCaffeVector(net,image):
 
 def mtcnnDetect(image):
 
-    if(image.shape[2]!=3 and image.shape[2]!=4):
-        return [],[],[]
+    try:
+        if(image.shape[2]!=3 and image.shape[2]!=4):
+            return [],[]
 
-    if(image.shape[2]==4):
-        image = image[:,:,:-1]
+        if(image.shape[2]==4):
+            image = image[:,:,:-1]
+
+    except Exception as e:
+        return [],[]
 
     img_matlab = image.copy()
     tmp = img_matlab[:,:,2].copy()
@@ -261,6 +266,10 @@ def cluster_facial_encodings(facial_encodings):
     sorted_clusters = _chinese_whispers(facial_encodings.items())
     return sorted_clusters
 
+def cv_imread(filePath):
+    cv_img = cv2.imdecode(np.fromfile(filePath,dtype=np.uint8),-1)
+    return cv_img
+
 def compute_facial_encodings(net, image_paths):
 
     """ Compute Facial Encodings
@@ -285,7 +294,7 @@ def compute_facial_encodings(net, image_paths):
 
     for i in range(len(image_paths)):
 
-        img = cv2.imread(image_paths[i])   # BGR
+        img = cv_imread(image_paths[i])   # BGR
         boundingboxes, warpedFaces = mtcnnDetect(img)
 
         for j in range(len(warpedFaces)):
@@ -315,17 +324,10 @@ def compute_facial_encodings(net, image_paths):
     return facial_encodings, features, faceIds, pts, picPaths
 
 
-def get_onedir(paths):
-    dataset = []
-    path_exp = os.path.expanduser(paths)
-    if os.path.isdir(path_exp):
-        images = os.listdir(path_exp)
-        image_paths = [os.path.join(path_exp,img) for img in images]
+def get_onedir(path):
 
-        for x in image_paths:
-            if os.path.getsize(x)>0:
-                dataset.append(x)
-        
+    files = paths.list_files(r''.join(path), validExts=(".jpg", ".jpeg", ".png"))
+    dataset = [it for it in files]
     return dataset 
 
 
@@ -368,7 +370,7 @@ def main(args):
             makedirs(cluster_dir)
         for faceId in cluster:
             ii = faceIds.index(faceId)
-            img = cv2.imread(picPaths[ii])
+            img = cv_imread(picPaths[ii])
             pt = np.array(pts[ii].split(',')).astype(np.int32)
 
             faceArea = img[pt[1]:pt[3], pt[0]:pt[2]]
