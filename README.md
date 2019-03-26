@@ -22,7 +22,7 @@ This project contains:
 #### which convert from tfmodel</br>
 https://drive.google.com/file/d/1EXPBSXwTaqrSC0OhUdXNmKSh9qJUQ55-/view
 #### **warning**
-**It seems that the older pretrained model with 128D embedding output has a higher accuray than new model with 512D output, infer to https://github.com/davidsandberg/facenet/issues/948. So here use pretrained model `20170512-110547` as default. You can change to `20180402-114759` in `tf2caffe.py`, remember to change `EMBEDDING_SIZE = 512` as well, and also `hnswlib.Index(space='l2', dim=512)` in `faceServer.py`.**
+**It seems that the older pretrained model with 128D embedding output has a higher accuray than new model with 512D output, refer to https://github.com/davidsandberg/facenet/issues/948. So here use pretrained model `20170512-110547` as default. You can change to `20180402-114759` in `tf2caffe.py`, remember to change `EMBEDDING_SIZE = 512` as well, and also `hnswlib.Index(space='l2', dim=512)` in `faceServer.py`.**
 
 * ### Outline
 ![failed](https://github.com/taylorlu/FaceAll/blob/master/resource/web.png)
